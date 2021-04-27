@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "telegram_pa"
+version = "0.1.0"
+description = ""
+authors = ["Max Ermakov <maksim_ermakov@protonmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Telethon = "^1.21.1"
+python-dotenv = "^0.17.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
