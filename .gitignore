@@ -3,3 +3,4 @@
 *.session
 *.jpg
 .vscode
+__pycache__

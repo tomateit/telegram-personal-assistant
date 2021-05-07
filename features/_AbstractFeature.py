@@ -1,9 +1,12 @@
-from abc import ABCMeta, abstractclassmethod
-from telethon.events import Event,
+from abc import ABCMeta, abstractmethod
 
 class AbstractFeature(metaclass=ABCMeta):
-    @abstractclassmethod
-    def _event_builder()-> Event:
+    @staticmethod
+    @abstractmethod
+    def event_builder():
+        raise NotImplementedError
 
-    @abstractclassmethod
-    def _feature(event: Event)
+    @staticmethod
+    @abstractmethod
+    def feature(event):
+        raise NotImplementedError

@@ -1,0 +1,2 @@
+from .on_edit_uppercase import OnEditUppercase
+from .on_new_message_uppercase import OnNewMessageUppsercase

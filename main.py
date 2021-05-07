@@ -6,6 +6,7 @@ logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s'
                     level=logging.WARNING)
 load_dotenv()
 
+
 API_ID = os.environ["API_ID"]
 API_HASH = os.environ["API_HASH"]
 
@@ -18,12 +19,11 @@ async def main():
         print(draft.text)
 
 
-client.on()(on_newmessage_uppercase)
+from features import OnNewMessageUppsercase, OnEditUppercase
 
+client.add_event_handler(OnEditUppercase.feature, OnEditUppercase.event_builder())
+client.add_event_handler(OnNewMessageUppsercase.feature, OnNewMessageUppsercase.event_builder())
 
-
-
-client.add_event_handler(on_edit_uppercase, events.MessageEdited(outgoing=True, pattern=EDITED_UPPERCASE_PATTERN))
 
 
 if __name__ == "__main__":
