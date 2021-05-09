@@ -19,10 +19,11 @@ async def main():
         print(draft.text)
 
 
-from features import OnNewMessageUppsercase, OnEditUppercase
+from features import OnNewMessageUppsercase, OnEditUppercase, OnNewMessageJoin
 
 client.add_event_handler(OnEditUppercase.feature, OnEditUppercase.event_builder())
 client.add_event_handler(OnNewMessageUppsercase.feature, OnNewMessageUppsercase.event_builder())
+client.add_event_handler(OnNewMessageJoin.feature, OnNewMessageJoin.event_builder())
 
 
 
