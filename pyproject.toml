@@ -10,6 +10,7 @@ Telethon = "^1.21.1"
 python-dotenv = "^0.17.0"
 
 [tool.poetry.dev-dependencies]
+ipykernel = "^6.4.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

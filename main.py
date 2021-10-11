@@ -14,9 +14,9 @@ client = TelegramClient('TelegramPA_session', API_ID, API_HASH)
 client.start()
 me = client.get_me()
 
-async def main():
-    async for draft in client.iter_drafts():
-        print(draft.text)
+# async def main():
+#     async for draft in client.iter_drafts():
+#         print(draft.text)
 
 
 from features import OnNewMessageUppsercase, OnEditUppercase, OnNewMessageJoin
