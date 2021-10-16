@@ -2,14 +2,10 @@ from ._AbstractFeature import AbstractFeature
 from telethon.events import NewMessage
 import re
 
-class OnNewMessageJoin(AbstractFeature):
-    JOIN_PATTERN = r'^\*\+\*$'
-    @staticmethod
-    def event_builder():
-        return NewMessage(outgoing=True, pattern=OnNewMessageJoin.JOIN_PATTERN)
+class JoinMessages(AbstractFeature):
+    COMMAND_PATTERN = r'^\*\+\*$'
 
-    @staticmethod
-    async def feature(event):
+    async def on_new_message(self, event):
         print("Event on_newmessage_join triggered")
         chat = await event.get_chat()
         await event.delete()

@@ -19,12 +19,16 @@ me = client.get_me()
 #         print(draft.text)
 
 
-from features import OnNewMessageUppsercase, OnEditUppercase, OnNewMessageJoin
+from features import UppercaseMessage, InstantMath, JoinMessages, FixTypos
 
-client.add_event_handler(OnEditUppercase.feature, OnEditUppercase.event_builder())
-client.add_event_handler(OnNewMessageUppsercase.feature, OnNewMessageUppsercase.event_builder())
-client.add_event_handler(OnNewMessageJoin.feature, OnNewMessageJoin.event_builder())
+client.add_event_handler(InstantMath().on_new_message, InstantMath().on_new_message_event_builder())
+client.add_event_handler(UppercaseMessage().on_new_message, UppercaseMessage().on_new_message_event_builder())
+client.add_event_handler(UppercaseMessage().on_edited_message, UppercaseMessage().on_edited_message_event_builder())
+client.add_event_handler(JoinMessages().on_edited_message, JoinMessages().on_edited_message_event_builder())
+client.add_event_handler(JoinMessages().on_new_message, JoinMessages().on_new_message_event_builder())
 
+# fixer_mod = FixTypos()
+# client.add_event_handler(fixer_mod.on_edited_message, fixer_mod.on_edited_message_event_builder())
 
 
 if __name__ == "__main__":

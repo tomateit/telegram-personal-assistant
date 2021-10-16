@@ -1,15 +1,18 @@
 from ._AbstractFeature import AbstractFeature
-from telethon.events import NewMessage
-import re
+import re 
+from telethon.events import MessageEdited
 
-class OnNewMessageUppsercase(AbstractFeature):
-    UPPERCASE_PATTERN = r'^\$~$'
-    @staticmethod
-    def event_builder():
-        return NewMessage(outgoing=True, pattern=OnNewMessageUppsercase.UPPERCASE_PATTERN)
+class UppercaseMessage(AbstractFeature):
+    COMMAND_PATTERN = r'\$~'
 
-    @staticmethod
-    async def feature(event):
+    async def on_edited_message(self, event):
+        text = event.message.raw_text
+        text = re.sub(self.COMMAND_PATTERN, "", text)
+        print("Event on_edit_uppercase triggered")
+        # chat_id = event.chat_id
+        await event.message.edit(text.upper())
+
+    async def on_new_message(self, event):
         print("Event on_newmessage_uppercase triggered")
         chat = await event.get_chat()
         # chat_id = event.chat_id
@@ -20,3 +23,4 @@ class OnNewMessageUppsercase(AbstractFeature):
                 text = message.raw_text
                 await message.edit(text.upper())
                 break
+
