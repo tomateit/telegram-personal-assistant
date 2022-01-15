@@ -1,5 +1,6 @@
 .venv
 .env
+.env.docker
 .vscode
 
 *.session
@@ -15,3 +16,5 @@
 __pycache__/
 .ipynb_checkpoints/
 vendor/
+
+deploy_to_local_server.sh

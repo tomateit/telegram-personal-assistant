@@ -1,0 +1,4 @@
+*.jpg
+.vscode
+.venv
+notebooks/

@@ -19,7 +19,7 @@ me = client.get_me()
 #         print(draft.text)
 
 
-from features import UppercaseMessage, InstantMath, JoinMessages, FixTypos
+from features import UppercaseMessage, InstantMath, JoinMessages
 
 client.add_event_handler(InstantMath().on_new_message, InstantMath().on_new_message_event_builder())
 client.add_event_handler(UppercaseMessage().on_new_message, UppercaseMessage().on_new_message_event_builder())

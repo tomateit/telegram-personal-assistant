@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "telegram_pa"
 version = "0.1.0"
-description = ""
+description = "Additional features for Telegram, implemented via Telegram Client feature set."
 authors = ["Max Ermakov <maksim_ermakov@protonmail.com>"]
 
 [tool.poetry.dependencies]

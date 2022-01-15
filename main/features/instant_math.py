@@ -12,7 +12,7 @@ class InstantMath(AbstractFeature):
     def __solver(expr) -> str:
         # print(f"Got {expr}")
         # Eval is ok, cuz it's my messages
-        return str(eval(expr.group()))
+        return f"{expr.group()} = {str(eval(expr.group()))}"
 
     async def on_new_message(self, event):
         text = event.message.raw_text
