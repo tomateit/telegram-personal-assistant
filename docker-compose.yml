@@ -1,0 +1,8 @@
+version: "3.8"
+
+services: 
+    telegram_pa:
+        build: .
+        restart: on-failure:5
+
+

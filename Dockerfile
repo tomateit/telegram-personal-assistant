@@ -1,17 +1,17 @@
-FROM python:3.8-slim-buster
+FROM python:3.10-slim-buster
 
 ENV ENVIRONMENT=production
 WORKDIR /app
 
-RUN apt update && apt upgrade -y
+RUN apt update && apt upgrade -y && apt install curl -y
 
-RUN pip install 'poetry==1.1.7'
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
-RUN poetry config virtualenvs.create false
+RUN /root/.local/bin/poetry config virtualenvs.create false
 
 COPY poetry.lock pyproject.toml /app/
 
-RUN poetry install --no-dev
+RUN /root/.local/bin/poetry install --no-dev
 
 COPY ./ /app/
 
