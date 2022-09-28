@@ -5,7 +5,7 @@ description = "Additional features for Telegram, implemented via Telegram Client
 authors = ["Max Ermakov <maksim_ermakov@protonmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 Telethon = "^1.21.1"
 python-dotenv = "^0.17.0"
 
