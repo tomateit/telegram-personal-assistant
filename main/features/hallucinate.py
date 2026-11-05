@@ -16,13 +16,16 @@ Access control (commands from your own account, in any chat, e.g. Saved Messages
     @hallucinate(-)           -> in a 1:1 dialog: revoke the person you're talking to
 """
 
+import base64
 import json
 import logging
 import os
 import re
 import tempfile
+import time
 from pathlib import Path
 
+import httpx
 import litellm
 from telethon import events
 from telethon.tl.types import User
@@ -124,10 +127,54 @@ def _split(text: str, limit: int = TELEGRAM_LIMIT) -> list[str]:
     return chunks
 
 
+IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+
+
+async def _download_image(message) -> str | None:
+    """Returns the message's image as a data URL, or None. Handles photos and image files (not stickers)."""
+    if message.photo:
+        mime = "image/jpeg"
+    elif message.document and message.document.mime_type in IMAGE_MIME_TYPES and not message.sticker:
+        if message.document.size > MAX_IMAGE_BYTES:
+            return None
+        mime = message.document.mime_type
+    else:
+        return None
+    data = await message.download_media(file=bytes)
+    return f"data:{mime};base64,{base64.b64encode(data).decode()}" if data else None
+
+
+class ModelCatalog:
+    """Knows which OpenRouter models accept image input (from the public models list, cached)."""
+
+    URL = "https://openrouter.ai/api/v1/models"
+    TTL = 3600
+
+    def __init__(self):
+        self._vision: dict[str, bool] = {}
+        self._fetched_at = 0.0
+
+    async def supports_images(self, model_id: str) -> bool:
+        if time.monotonic() - self._fetched_at > self.TTL:
+            try:
+                async with httpx.AsyncClient(timeout=15) as http:
+                    data = (await http.get(self.URL)).raise_for_status().json()["data"]
+                self._vision = {
+                    m["id"]: "image" in (m.get("architecture") or {}).get("input_modalities", []) for m in data
+                }
+                self._fetched_at = time.monotonic()
+            except Exception:
+                log.exception("could not fetch OpenRouter model list")
+        # unknown model or catalog unavailable: try sending the image and let the API decide
+        return self._vision.get(model_id, True)
+
+
 class Hallucinate:
     def __init__(self, config_path: Path, api_key: str):
         self.config = Config(config_path)
         self.api_key = api_key
+        self.catalog = ModelCatalog()
         log.warning("hallucinate config: %s", config_path)
 
     def register(self, client):
@@ -185,24 +232,43 @@ class Hallucinate:
             return
         label, model_id = resolved
 
-        context = None
-        if event.message.is_reply:
-            replied = await event.message.get_reply_message()
-            if replied and replied.raw_text:
-                context = replied.raw_text
-        if not prompt and not context:
+        trigger = event.message
+        replied = await trigger.get_reply_message() if trigger.is_reply else None
+        context = (replied.raw_text or "").strip() if replied else ""
+
+        replied_image = await _download_image(replied) if replied is not None else None
+        trigger_image = await _download_image(trigger)
+        images = [img for img in (replied_image, trigger_image) if img]
+        if not prompt and not context and not images:
             return
 
-        if context and prompt:
-            user_content = f"Message being discussed:\n\"\"\"\n{context}\n\"\"\"\n\n{prompt}"
+        images_dropped = bool(images) and not await self.catalog.supports_images(model_id)
+        if images_dropped:
+            images, replied_image, trigger_image = [], None, None
+
+        text_parts = []
+        if replied is not None and (context or replied_image):
+            body = f'"""\n{context}\n"""' if context else "(no text)"
+            attachment = " It has an image attached (the first image below)." if replied_image else ""
+            text_parts.append(f"Message being discussed:{attachment}\n{body}")
+        if trigger_image:
+            text_parts.append(f"The question comes with an image attached ({'second' if replied_image else 'the'} image below).")
+        if prompt:
+            text_parts.append(prompt)
+        user_text = "\n\n".join(text_parts) or "(see the image)"
+
+        if images:
+            user_content = [{"type": "text", "text": user_text}] + [
+                {"type": "image_url", "image_url": {"url": url}} for url in images
+            ]
         else:
-            user_content = prompt or context
+            user_content = user_text
 
         messages = [
             {"role": "system", "content": self.config.data["system_prompt"]},
             {"role": "user", "content": user_content},
         ]
-        log.warning("hallucinate -> %s (%d chars, context=%s)", model_id, len(user_content), bool(context))
+        log.warning("hallucinate -> %s (%d chars, context=%s, images=%d, dropped=%s)", model_id, len(user_text), bool(context), len(images), images_dropped)
         try:
             async with event.client.action(event.chat_id, "typing"):
                 response = await litellm.acompletion(
@@ -218,7 +284,8 @@ class Hallucinate:
             return
 
         reply_to = event.message
-        for chunk in _split(f"{label} said: {answer}"):
+        note = " (can't see images, so the image was ignored)" if images_dropped else ""
+        for chunk in _split(f"{label} said{note}: {answer}"):
             reply_to = await event.client.send_message(
                 event.chat_id, chunk, reply_to=reply_to, parse_mode=None, link_preview=False
             )

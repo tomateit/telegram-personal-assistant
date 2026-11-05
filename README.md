@@ -9,6 +9,7 @@ In a 1:1 dialog (or Saved Messages):
 - `@hallucinate what is the capital of London`: asks the default model (ChatGPT).
 - `@hallucinate:gemini ...`: picks a model by alias (`chatgpt`, `gemini`, `gemini-flash`, `claude`, `opus`, `grok`, `deepseek`, `kimi`, `glm`) or by any raw OpenRouter id (`@hallucinate:openai/gpt-6-astra ...`).
 - Sent as a reply to a message, that message is added as context. The rest of the dialog is never sent.
+- Images (photos or image files) on the replied-to message and/or on your own message are sent too, if the model accepts images. Models that don't (e.g. `deepseek`, `glm`) get the text only, and the answer notes that the image was ignored.
 - The answer is posted from your account as `<model> said: ...`.
 
 Other people can't trigger it unless you allow them:

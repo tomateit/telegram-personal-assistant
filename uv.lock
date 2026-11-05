@@ -1749,6 +1749,7 @@ name = "telegram-pa"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "litellm" },
     { name = "python-dotenv" },
     { name = "telethon" },
@@ -1761,6 +1762,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "litellm", specifier = ">=1.108.0" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "telethon", specifier = ">=1.45.0" },
