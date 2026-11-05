@@ -1,17 +1,16 @@
-[tool.poetry]
-name = "telegram_pa"
+[project]
+name = "telegram-pa"
 version = "0.1.0"
 description = "Additional features for Telegram, implemented via Telegram Client feature set."
-authors = ["Max Ermakov <maksim_ermakov@protonmail.com>"]
+authors = [{ name = "Max Ermakov", email = "maksim_ermakov@protonmail.com" }]
+requires-python = ">=3.14"
+dependencies = [
+    "litellm>=1.108.0",
+    "python-dotenv>=1.2.4",
+    "telethon>=1.45.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-Telethon = "^1.21.1"
-python-dotenv = "^0.17.0"
-
-[tool.poetry.dev-dependencies]
-ipykernel = "^6.4.1"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+]

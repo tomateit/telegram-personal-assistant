@@ -1,8 +1,10 @@
-version: "3.8"
-
-services: 
-    telegram_pa:
-        build: .
-        restart: on-failure:5
-
-
+services:
+  telegram-pa:
+    build: .
+    image: telegram-pa:latest
+    restart: unless-stopped
+    env_file: .env
+    # run as the host user so files in ./data stay editable without sudo
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./data:/app/data

@@ -1,20 +1,18 @@
-FROM python:3.10-slim-buster
+FROM python:3.14-slim-trixie
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-ENV ENVIRONMENT=production
+ENV ENVIRONMENT=production \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-RUN apt update && apt upgrade -y && apt install curl -y
-
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-RUN /root/.local/bin/poetry config virtualenvs.create false
-
-COPY poetry.lock pyproject.toml /app/
-
-RUN /root/.local/bin/poetry install --no-dev
+COPY pyproject.toml uv.lock .python-version /app/
+RUN uv sync --locked --no-dev --no-install-project
 
 COPY ./ /app/
+RUN uv sync --locked --no-dev
 
-COPY ./.env.docker ./.env
-
-CMD ["python", "/app/main/main.py"]
+# Secrets come from env_file at runtime; session + config live in the /app/data volume.
+ENTRYPOINT ["/app/.venv/bin/python", "main/main.py"]
