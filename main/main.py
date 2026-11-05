@@ -38,7 +38,7 @@ def make_client() -> TelegramClient:
 def login():
     client = make_client()
     client.start()  # interactive prompts
-    me = client.get_me()
+    me = client.loop.run_until_complete(client.get_me())
     print(f"Logged in as {me.first_name} (@{me.username}, id {me.id}). Session saved to {SESSION_PATH}.session")
     client.disconnect()
 
