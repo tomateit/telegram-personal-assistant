@@ -29,12 +29,21 @@ The old features (instant math, uppercase, message joining) are kept in `main/fe
 git clone <repo> app_telegram_pa && cd app_telegram_pa
 cp .env.example .env   # fill API_ID, API_HASH (https://my.telegram.org), OPENROUTER_API_KEY
 docker compose build
-./login.sh   # one time: phone, code, 2FA password (= docker compose run --rm telegram-pa login)
+./login.sh personal   # one time per account: phone, code, 2FA password
 docker compose up -d
 ```
 
-The session and the config are stored in `./data` (mounted into the container, not in git or the image).
-If the session ever expires, the container exits with a message; run the `login` command again.
+### Multiple accounts
+
+Run `./login.sh <name>` once for each Telegram account; `<name>` is just a local label.
+The bot serves every logged-in account in one process, and `login.sh` restarts it to pick up a new one.
+
+- Sessions: `./data/sessions/<name>.session`. To remove an account, delete its file and `docker compose restart`.
+- `docker compose run --rm telegram-pa list` shows each account and whether its session is still valid.
+- An account whose session has expired is skipped (with a warning in `docker compose logs`); re-run `./login.sh <name>` for it.
+- `@hallucinate(...)` allowlists are per account; model settings in `data/hallucinate.json` are shared.
+
+Sessions and config live in `./data` (mounted into the container, not in git or the image).
 
 Never run the same session in two places at once, because Telegram may revoke it.
 
@@ -42,6 +51,6 @@ Never run the same session in two places at once, because Telegram may revoke it
 
 ```bash
 uv sync
-uv run main/main.py login
+uv run main/main.py login personal
 uv run main/main.py
 ```

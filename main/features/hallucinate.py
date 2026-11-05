@@ -65,8 +65,9 @@ DEFAULT_CONFIG = {
         "Reply in the language of the question."
     ),
     "max_tokens": 2000,
-    # [{"id": 123, "username": "someone", "name": "Some One"}]
-    "allowed_users": [],
+    # per logged-in account (keyed by that account's Telegram id):
+    # {"1244150110": [{"id": 123, "username": "someone", "name": "Some One"}]}
+    "allowed_users": {},
 }
 
 
@@ -77,6 +78,11 @@ class Config:
             self.data = json.loads(path.read_text(encoding="utf-8"))
             for key, value in DEFAULT_CONFIG.items():
                 self.data.setdefault(key, value)
+            if isinstance(self.data["allowed_users"], list):  # pre multi-account format
+                if self.data["allowed_users"]:
+                    log.warning("dropping old global allowed_users list: %s", self.data["allowed_users"])
+                self.data["allowed_users"] = {}
+                self.save()
         else:
             self.data = json.loads(json.dumps(DEFAULT_CONFIG))
             self.save()
@@ -98,21 +104,25 @@ class Config:
             return name.lstrip("~").split("/", 1)[1], name
         return None
 
-    def is_allowed(self, user_id: int) -> bool:
-        return any(u["id"] == user_id for u in self.data["allowed_users"])
+    def _allowed(self, account_id: int) -> list[dict]:
+        return self.data["allowed_users"].setdefault(str(account_id), [])
 
-    def allow(self, user: User):
-        self.revoke(user.id)
-        self.data["allowed_users"].append(
+    def is_allowed(self, account_id: int, user_id: int) -> bool:
+        return any(u["id"] == user_id for u in self._allowed(account_id))
+
+    def allow(self, account_id: int, user: User):
+        self.revoke(account_id, user.id)
+        self._allowed(account_id).append(
             {"id": user.id, "username": user.username, "name": " ".join(filter(None, [user.first_name, user.last_name]))}
         )
         self.save()
 
-    def revoke(self, user_id: int) -> bool:
-        before = len(self.data["allowed_users"])
-        self.data["allowed_users"] = [u for u in self.data["allowed_users"] if u["id"] != user_id]
+    def revoke(self, account_id: int, user_id: int) -> bool:
+        users = self._allowed(account_id)
+        kept = [u for u in users if u["id"] != user_id]
+        self.data["allowed_users"][str(account_id)] = kept
         self.save()
-        return len(self.data["allowed_users"]) != before
+        return len(kept) != len(users)
 
 
 def _split(text: str, limit: int = TELEGRAM_LIMIT) -> list[str]:
@@ -178,6 +188,7 @@ class Hallucinate:
         log.warning("hallucinate config: %s", config_path)
 
     def register(self, client):
+        """`client.account_id` must be set to the logged-in account's Telegram id."""
         client.add_event_handler(self.on_message, events.NewMessage(pattern=re.compile(r"^\s*@hallucinate", re.I)))
 
     async def on_message(self, event: events.NewMessage.Event):
@@ -190,7 +201,7 @@ class Hallucinate:
 
         if not event.is_private:
             return
-        if not msg.out and not self.config.is_allowed(event.sender_id):
+        if not msg.out and not self.config.is_allowed(event.client.account_id, event.sender_id):
             return  # someone else used the tag without permission: noop
 
         m = TRIGGER_RE.match(text)
@@ -203,7 +214,7 @@ class Hallucinate:
         try:
             if username:
                 user = await event.client.get_entity(username)
-            elif event.is_private and event.chat_id != (await event.client.get_me()).id:
+            elif event.is_private and event.chat_id != event.client.account_id:
                 user = await event.get_chat()
             else:
                 await event.message.edit("⚠️ @hallucinate(): specify a username, or use it inside a 1:1 dialog")
@@ -217,10 +228,10 @@ class Hallucinate:
 
         who = f"@{user.username}" if user.username else (user.first_name or str(user.id))
         if revoke:
-            removed = self.config.revoke(user.id)
+            removed = self.config.revoke(event.client.account_id, user.id)
             note = f"🔒 {who} can no longer use {TAG}" if removed else f"{who} wasn't allowed anyway"
         else:
-            self.config.allow(user)
+            self.config.allow(event.client.account_id, user)
             note = f"🔓 {who} can now use {TAG} in your 1:1 dialog"
         await event.message.edit(note)
 
